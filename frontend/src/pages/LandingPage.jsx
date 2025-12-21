@@ -74,7 +74,7 @@ const LandingPage = () => {
         aria-hidden="true"
         className="
           absolute inset-0 z-0 
-          bg-[url(../../public/landingpage.jpg)]
+          bg-[url(/landingpage.jpg)]
           bg-cover bg-center bg-fixed 
           blur-lg
         "
