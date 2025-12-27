@@ -10,6 +10,7 @@ import Signup from "./pages/Signup"
 import { Navbar } from './components/Navbar'
 import UserDashboard from './pages/UserDashboard'
 import SettingsTab from './components/SettingsTab'
+import ProtectedRoutes from './util/ProtectedRoutes'
 
 
 
@@ -25,9 +26,15 @@ function App() {
      <Routes>
       <Route path='/' element={<LandingPage></LandingPage>}></Route>
       <Route path='/login' element={<Login></Login>}></Route>
-      <Route path='/signup' element={<Signup></Signup>}></Route>
-      <Route path='/draw' element= {<Whiteboard></Whiteboard>}></Route>
+      <Route element ={<ProtectedRoutes></ProtectedRoutes>}>
+
+       <Route path='/draw' element= {<Whiteboard></Whiteboard>}></Route>
       <Route path='/profile' element ={<UserDashboard></UserDashboard>}></Route>
+      
+      
+      </Route>
+      <Route path='/signup' element={<Signup></Signup>}></Route>
+     
      </Routes>
 
 
