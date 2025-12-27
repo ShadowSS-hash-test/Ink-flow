@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import SettingsTab from '../components/SettingsTab';
 import Sidebar from '../components/Sidebar';
+import MyBoards from '../components/MyBoards';
 import { LayoutDashboard, ArrowRight, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -118,17 +119,8 @@ const UserDashboard = () => {
           )}
 
           {/* --- TAB: BOARDS --- */}
-          {activeTab === 'boards' && (
-             <div className={`flex flex-col items-center justify-center h-full text-center transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              <div className="bg-white/10 p-6 rounded-full mb-4 backdrop-blur-sm border border-white/20">
-                <LayoutDashboard size={48} className="text-blue-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">My Boards</h2>
-              <p className="text-gray-300 max-w-md">
-                All your saved creative sessions will appear here.
-              </p>
-            </div>
-          )}
+          {activeTab === 'boards' && (<MyBoards/>)
+          }
 
           {/* --- TAB: SETTINGS --- */}
           {activeTab === 'settings' && (
