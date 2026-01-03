@@ -119,7 +119,7 @@ const UserDashboard = () => {
           )}
 
           {/* --- TAB: BOARDS --- */}
-          {activeTab === 'boards' && (<MyBoards/>)
+          {activeTab === 'boards' && (<MyBoards/> )
           }
 
           {/* --- TAB: SETTINGS --- */}

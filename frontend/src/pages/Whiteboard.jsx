@@ -66,8 +66,7 @@ export const Whiteboard = () => {
   }, [color, lineWidth, tool, drawSegment]);
 
 
-  // --- NEW: Renamed function ---
-  // This function ONLY clears the canvas. It does not emit any events.
+
   const clearLocalCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const context = contextRef.current;
@@ -75,7 +74,7 @@ export const Whiteboard = () => {
       context.fillStyle = '#FFFFFF';
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
-  }, []); // No dependencies, it's a pure DOM operation
+  }, []); 
 
 
   /**
@@ -195,7 +194,7 @@ export const Whiteboard = () => {
     lastPositionRef.current = newPos;
   };
 
-  // --- NEW: Click handler for the clear button ---
+
   const handleClearClick = () => {
     // 1. Clear our own canvas
     clearLocalCanvas();
