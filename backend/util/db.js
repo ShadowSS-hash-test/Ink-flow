@@ -1,12 +1,9 @@
-import { Pool } from "pg";
-import dotenv from "dotenv"
+import { Pool } from '@neondatabase/serverless'; 
+import dotenv from 'dotenv';
+dotenv.config();
 
 const sql = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    require: true,
-  },
 });
 
 export default sql;
-
