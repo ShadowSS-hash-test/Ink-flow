@@ -1,4 +1,4 @@
-import { signup,signin } from "../controllers/authControllers.js";
+import { signup,signin,logout,refreshToken } from "../controllers/authControllers.js";
 import { verifyToken } from "../middlewares/Auth.middlewares.js";
 import express from "express";
 
@@ -12,6 +12,7 @@ router.get('/profile',verifyToken,(req,res)=>{
         message:"Welcome User!"
     })
 })
+router.get('/logout',verifyToken,logout)
 
 export default router;
 

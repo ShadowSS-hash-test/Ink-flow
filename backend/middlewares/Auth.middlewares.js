@@ -9,9 +9,9 @@ export const verifyToken = (req, res, next) => {
   }
 
 
-  jwt.verify(token, process.env.JWT_SECRET, async (err, decodedUser) => {
+  jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET , async (err, decodedUser) => {
     if (err) {
-      return res.status(403).json({ success: false, message: "Forbidden: Invalid token" });
+      return res.status(403).json({ success: false, message: "Forbidden: Invalid token", error: err.message});
     }
 
     try {

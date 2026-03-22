@@ -6,7 +6,6 @@ import dotenv from "dotenv"
 dotenv.config()
 
 
-
 export const signup = async(req,res)=>{
 
     try{
@@ -66,11 +65,19 @@ export const signup = async(req,res)=>{
           const newUser = await sql.query(insertQuery,[username,email,EncryptedPassword])
            
 
-          const token = jwt.sign({userId: newUser.rows[0].id},process.env.JWT_SECRET,{ expiresIn: '1h' });
+          const access_token = jwt.sign({userId: newUser.rows[0].id},process.env.JWT_ACCESS_TOKEN_SECRET,{ expiresIn: '15m' });
+          const refresh_token = jwt.sign({userId: newUser.rows[0].id},process.env.JWT_REFRESH_TOKEN_SECRET,{ expiresIn: '7d' })
 
-          res.cookie("access_token", token, {
+          res.cookie("access_token", access_token, {
                httpOnly: true, 
                secure: process.env.NODE_ENV === "production", 
+                maxAge:15*60*1000
+               })
+
+         res.cookie("refresh_token",refresh_token,{
+               httpOnly: true, 
+               secure: process.env.NODE_ENV === "production",
+                maxAge:7*24*60*60*1000 
                })
 
           return res.status(200).json({
@@ -78,9 +85,7 @@ export const signup = async(req,res)=>{
             data:newUser.rows[0]
           })
 
-         
-
-   
+  
 
     }catch(error){
       console.log("error in signup controller: ", error.message)
@@ -126,13 +131,20 @@ export const signin = async(req,res)=>{
          })
       }
 
-         const token = jwt.sign({userId: result.rows[0].id},process.env.JWT_SECRET,{ expiresIn: '1h' });
+         const access_token = jwt.sign({userId: result.rows[0].id},process.env.JWT_ACCESS_TOKEN_SECRET,{ expiresIn: '15m' });
+          const refresh_token = jwt.sign({userId: result.rows[0].id},process.env.JWT_REFRESH_TOKEN_SECRET,{ expiresIn: '7d' })
 
-          res.cookie("access_token", token, {
+          res.cookie("access_token", access_token, {
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "production", 
+               secure: process.env.NODE_ENV === "production",
+                maxAge:15*60*1000, 
                })
 
+         res.cookie("refresh_token",refresh_token,{
+               httpOnly: true, 
+               secure: process.env.NODE_ENV === "production", 
+                maxAge:7*24*60*60*1000
+               })
 
       return res.status(200).json({
           success:true,
@@ -141,10 +153,85 @@ export const signin = async(req,res)=>{
       })
 
     }catch(error){
-      console.log("Error in sign-in controller ", error.message)
+      console.log("Error in sign-in controller: ", error.message)
       return res.status(500).json({
          success:false,
          message:error.message
       })
     }
+}
+
+export const refreshToken = async(req,res)=>{
+    try{
+        const refreshTok = req.cookies.refresh_token
+        if(!refreshTok)
+        {
+            return res.status(401).json({
+                message:"No refresh token found"
+            })
+        }
+
+        let decoded;
+
+      
+             try {
+                 decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN_SECRET);
+                     
+            } catch (err) {
+           
+            return res.status(401).json({
+               success: false,
+               message: "Invalid or expired token",
+               errorType: err.name 
+            });
+            }
+
+    
+        const access_token = jwt.sign({userId: decoded.userId}, process.env.JWT_ACCESS_TOKEN_SECRET, {expiresIn:"15m"});
+
+       res.cookie("access_token",access_token,{
+        httpOnly:true,
+        secure:process.env.NODE_ENV === "production",
+        sameSite:"strict",
+        maxAge:15*60*1000 //15 mins
+
+    })
+
+    return res.status(200).json({
+        message:"Successfully refreshed access token"
+    })
+
+ 
+
+    }catch(error)
+    {
+        console.log(`Error in refreshToken controller ${error}`)
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+
+    }
+}
+
+
+export const logout = async(req,res)=>{
+        try{
+            
+      
+            res.clearCookie("refresh_token");
+            res.clearCookie("access_token")
+            res.json({message:"Logged out successfully"})
+
+        }catch(error)
+        {
+              console.log("Error in logout controller: " + error)
+            res.status(500).json({
+                success:false,
+                message:"failed to logout, internal server error.",
+                err:error.message
+            })
+
+        }
+        
 }
