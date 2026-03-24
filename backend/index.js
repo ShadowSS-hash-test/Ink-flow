@@ -6,6 +6,7 @@ import sql from "./util/db.js"
 import initDB from "./util/initDB.js"
 import authRoutes from "./routes/authRoutes.js"
 import userRoutes from "./routes/userRoutes.js"
+import drawingRoutes from "./routes/drawingRoutes.js"
 import cookieParser from "cookie-parser"
 
 
@@ -15,6 +16,7 @@ app.use(cookieParser())
 
 app.use('/api/auth',authRoutes)
 app.use('/api/user',userRoutes)
+app.use('/api/drawings',drawingRoutes)
 
 
 

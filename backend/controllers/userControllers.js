@@ -130,5 +130,68 @@ export const updatePassword = async (req, res) => {
 };
 
 export const deleteAccount = async(req,res)=>{
-    
+
+    try{
+           const {password} = req.body;
+       
+
+           if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Token is invalid, please login first"
+            });
+        }
+
+            const id = req.user.id
+
+                if (!password) {
+            return res.status(400).json({
+                success: false,
+                message: "Make sure all the fields are filled"
+            });
+        }
+
+       let query = `SELECT password FROM users WHERE id=$1`;
+        let result = await sql.query(query, [id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "A user with this ID doesn't exist"
+            });
+        }
+
+        // 6. Verify Current Password (Corrected bcrypt.compare)
+        const isPasswordValid = await bcrypt.compare(password, result.rows[0].password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid current password"
+            });
+        }
+
+        query = `DELETE FROM users WHERE id=$1`
+        await sql.query(query,[id])
+
+          res.clearCookie("refresh_token");
+          res.clearCookie("access_token")
+         
+
+
+        return res.status(200).json({
+            success:true,
+            message:"Successfully deleted your account"
+        })
+
+
+
+    }catch(error){
+        console.log("Error in deleteAccount controller: ", error.message)
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+ 
+
 }

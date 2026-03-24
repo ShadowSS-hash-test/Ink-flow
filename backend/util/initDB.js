@@ -18,6 +18,7 @@ const drawingsTable = `CREATE TABLE IF NOT EXISTS drawings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`
 
+
    try{
        await sql.query(userTable)
        console.log("User Table initialized successfully")
