@@ -63,6 +63,7 @@ export const updateBoard = async(req,res)=>{
 
 export const fetchBoards = async(req,res)=>{
 
+    
     try {
 
          if (!req.user || !req.user.id) {
