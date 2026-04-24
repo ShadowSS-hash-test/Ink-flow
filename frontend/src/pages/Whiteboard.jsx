@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { io } from "socket.io-client";
 
-// Helper UI component for toolbar buttons
 function Toolbutton({ label, icon, isActive = false, className = '', ...props }) {
   return (
     <button
@@ -26,12 +25,16 @@ function Toolbutton({ label, icon, isActive = false, className = '', ...props })
   );
 }
 
-export const Whiteboard = () => {
+export const Whiteboard = ({ initialRoomID = "create" }) => {
+  const [username] = useState(() =>`User_${Math.floor(Math.random() * 1000)}`);
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const [socket, setSocket] = useState(null);
+  
+  const [activeRoomID, setActiveRoomID] = useState(initialRoomID);
+  const [currentRoom, setCurrentRoom] = useState(initialRoomID);
+  const [joinInput, setJoinInput] = useState('');
 
-  // --- State ---
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState('pen');
   const [color, setColor] = useState('#000000');
@@ -56,7 +59,6 @@ export const Whiteboard = () => {
     context.closePath();
   }, []); 
 
-  
   const draw = useCallback((x0, y0, x1, y1) => {
     const style = {
       color: tool === 'eraser' ? '#FFFFFF' : color,
@@ -64,8 +66,6 @@ export const Whiteboard = () => {
     };
     drawSegment(x0, y0, x1, y1, style);
   }, [color, lineWidth, tool, drawSegment]);
-
-
 
   const clearLocalCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -76,33 +76,46 @@ export const Whiteboard = () => {
     }
   }, []); 
 
-
-  /**
-   * Effect to set up and manage the socket.io connection.
-   * Runs only once when the component mounts.
-   */
   useEffect(() => {
+    clearLocalCanvas(); 
+
     const newSocket = io("http://localhost:3000", {
       withCredentials: true,
     });
     setSocket(newSocket);
 
+    newSocket.emit("joinRoom", { roomID: activeRoomID, user: username });
+
+    newSocket.on("roomCreated", (roomID) => {
+      setCurrentRoom(roomID);
+    });
+
+    newSocket.on("replay", (history) => {
+      history.forEach((drawData) => {
+        drawSegment(drawData.x0, drawData.y0, drawData.x1, drawData.y1, drawData.style);
+      });
+    });
+
     newSocket.on('drawing', (data) => {
       drawSegment(data.x0, data.y0, data.x1, data.y1, data.style);
     });
 
-    // --- MODIFIED: Listen for clear event ---
-    // Now it calls the simple function that doesn't re-emit.
     newSocket.on('clearCanvas', clearLocalCanvas);
 
-    // Clean up the connection when the component unmounts
+    newSocket.on('error', (err) => {
+      console.error("Socket error:", err.message);
+      alert(err.message);
+    });
+
     return () => {
+      newSocket.off("roomCreated");
+      newSocket.off("replay");
       newSocket.off('drawing');
-      newSocket.off('clearCanvas', clearLocalCanvas); // Clean up with the correct function
+      newSocket.off('clearCanvas', clearLocalCanvas);
+      newSocket.off('error');
       newSocket.disconnect();
     };
-  }, [drawSegment, clearLocalCanvas]); // Add clearLocalCanvas to dependencies
-
+  }, [activeRoomID, username, drawSegment, clearLocalCanvas]); 
 
   const getPosition = (event) => {
     const canvas = canvasRef.current;
@@ -119,9 +132,6 @@ export const Whiteboard = () => {
     return { x, y };
   };
 
-  /**
-   * Effect to set up the canvas, context, and handle window resizing.
-   */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -145,15 +155,13 @@ export const Whiteboard = () => {
     };
     
     setCanvasSize();
-    clearLocalCanvas(); // Set initial white background
+    clearLocalCanvas(); 
 
     window.addEventListener('resize', setCanvasSize);
     return () => {
       window.removeEventListener('resize', setCanvasSize);
     };
-  }, [clearLocalCanvas]); // Use the new function here
-
-  // --- Drawing Event Handlers ---
+  }, [clearLocalCanvas]); 
 
   const startDrawing = (event) => {
     if (event.touches) event.preventDefault();
@@ -194,25 +202,49 @@ export const Whiteboard = () => {
     lastPositionRef.current = newPos;
   };
 
-
   const handleClearClick = () => {
-    // 1. Clear our own canvas
     clearLocalCanvas();
-    
-    // 2. Tell everyone else to clear
     if (socket) {
       socket.emit('clearCanvas');
     }
   };
 
+  const handleJoinRoom = () => {
+    if (joinInput.trim()) {
+      setActiveRoomID(joinInput.trim());
+      setCurrentRoom(joinInput.trim());
+      setJoinInput('');
+    }
+  };
 
-  // --- Render ---
   return (
     <div className="w-screen h-screen flex flex-col items-center p-4 gap-4 bg-gray-100 relative">
       
-      <div className="w-full max-w-xl bg-white shadow-lg rounded-lg p-3 flex flex-wrap justify-center items-center gap-4 z-10">
+      <div className="absolute top-4 right-4 bg-white p-2 rounded shadow flex items-center gap-3 z-20">
+        {currentRoom !== "create" && (
+          <div className="text-sm font-semibold text-gray-700 border-r pr-3">
+            Room ID: {currentRoom}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={joinInput}
+            onChange={(e) => setJoinInput(e.target.value)}
+            placeholder="Enter Room ID"
+            className="text-sm border border-gray-300 rounded px-2 py-1 outline-none focus:border-blue-500 w-32"
+          />
+          <button
+            onClick={handleJoinRoom}
+            className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors"
+          >
+            Join
+          </button>
+        </div>
+      </div>
+
+      <div className="w-full max-w-xl bg-white shadow-lg rounded-lg p-3 flex flex-wrap justify-center items-center gap-4 z-10 mt-12 sm:mt-0">
         
-        {/* ... (Color picker, Brush size, Pen, Eraser buttons are all the same) ... */}
         <div className="flex flex-col items-center">
           <label htmlFor="color" className="text-xs font-medium text-gray-500 mb-1">Color</label>
           <input
@@ -255,12 +287,10 @@ export const Whiteboard = () => {
           />
         </div>
         
-        
         <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
           <Toolbutton
             label="Clear All"
             icon={<Trash2 size={20} />}
-        
             onClick={handleClearClick}
             className="text-red-600 hover:bg-red-100"
           />
@@ -287,4 +317,3 @@ export const Whiteboard = () => {
     </div>
   );
 }
-
