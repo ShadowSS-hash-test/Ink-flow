@@ -1,61 +1,56 @@
-
-
-import React from 'react'
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Feather, LogIn, Mail, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
-
-
+import { useUserStore } from '../stores/useUserStore';
 
 export const Login = () => {
+  const { login, loading } = useUserStore();
+  
+  // 1. Added isLoaded state for the fade-in animation
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+
+  // 2. Trigger the mount animation as soon as the page loads
   useEffect(() => {
-    
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100); 
-    return () => clearTimeout(timer);
+    setIsLoaded(true);
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-   
-    console.log("Login attempt");
+    login(formData);
   };
 
   return (
-
     <div className="flex flex-col min-h-screen relative bg-gray-900"> 
       
-      {/* === This is the Blurred Image Background === */}
+      {/* === Blurred Image Background === */}
       <div 
         aria-hidden="true" 
         className="
           absolute inset-0 z-0 
-          bg-[url(https://media.istockphoto.com/id/469937444/photo/paintbrushes-on-artist-canvas-covered-with-oil-paints.jpg?s=612x612&w=0&k=20&c=u5Ac53dhkpKrAzz21faeDTC79mtuMVCCSX9xsCJp2qo=)] {/* NEW IMAGE URL */}
+          bg-[url(https://media.istockphoto.com/id/469937444/photo/paintbrushes-on-artist-canvas-covered-with-oil-paints.jpg?s=612x612&w=0&k=20&c=u5Ac53dhkpKrAzz21faeDTC79mtuMVCCSX9xsCJp2qo=)] 
           bg-cover
           blur-lg
         "
       />
       {/* === Dark Overlay === */}
-      {/* Adjusted overlay to complement the new image */}
       <div 
         aria-hidden="true" 
         className="absolute inset-0 z-10 bg-gray-900/70" 
       />
 
-      <Navbar></Navbar>
+      <Navbar />
 
-   
       <div className="relative z-20 flex flex-col min-h-screen">
-      
-
-        {/* Hero Section Container */}
         <main className="flex-1 flex items-center justify-center p-4">
           
           {/* === Login Card === */}
+          {/* 3. Changed 'loading' to 'isLoaded' so the form actually shows up! */}
           <div className={`
             w-full max-w-md
             transition-all duration-1000 ease-out
@@ -75,7 +70,7 @@ export const Login = () => {
               <h1 className="text-white text-3xl font-bold mb-2">
                 Welcome back
               </h1>
-              <p className="text-gray-300 mb-6"> {/* Adjusted text color */}
+              <p className="text-gray-300 mb-6"> 
                 Log in to continue to Inkflow.
               </p>
 
@@ -88,13 +83,15 @@ export const Login = () => {
                   Email
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"> {/* Adjusted icon color */}
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"> 
                     <Mail size={18} />
                   </span>
                   <input 
                     type="email" 
                     id="email"
                     required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="you@example.com"
                     className="
                       w-full pl-10 pr-4 py-3 
@@ -128,6 +125,8 @@ export const Login = () => {
                     type="password" 
                     id="password"
                     required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••"
                     className="
                       w-full pl-10 pr-4 py-3 
@@ -148,6 +147,7 @@ export const Login = () => {
               {/* Submit Button */}
               <button 
                 type="submit"
+                disabled={loading}
                 className="
                   w-full 
                   py-3 
@@ -163,14 +163,15 @@ export const Login = () => {
                   focus:ring-2 
                   focus:ring-blue-400 
                   focus:ring-offset-2 
-                  focus:ring-offset-gray-900 {/* Adjusted offset color */}
+                  focus:ring-offset-gray-900
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 "
               >
-                Log In
+                {loading ? 'Logging in...' : 'Log In'}
               </button>
 
               {/* Sign up Link */}
-              <p className="text-center text-gray-300 text-sm mt-6"> {/* Adjusted text color */}
+              <p className="text-center text-gray-300 text-sm mt-6"> 
                 Don't have an account?{' '}
                 <Link to="/signup" className="font-medium text-blue-300 hover:text-white">
                   Sign up

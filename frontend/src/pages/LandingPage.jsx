@@ -56,9 +56,7 @@ const LandingPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // --- Hooks for Scroll Animations ---
-  // We create a ref and a visibility state for each section
-  // that we want to animate as it scrolls into view.
+ 
   const [featuresSectionRef, isFeaturesSectionVisible] = useAnimateOnScroll({ triggerOnce: true, threshold: 0.2 });
   const [howItWorksSectionRef, isHowItWorksSectionVisible] = useAnimateOnScroll({ triggerOnce: true, threshold: 0.2 });
   const [ctaSectionRef, isCtaVisible] = useAnimateOnScroll({ triggerOnce: true, threshold: 0.2 });
@@ -122,7 +120,7 @@ const LandingPage = () => {
               <div className="mt-12 flex flex-col sm:flex-row gap-6">
 
                 <Link
-                  to="/draw"
+                  to="/drawOffline"
                   className={`
                     group flex-1 
                     bg-blue-600 text-white 

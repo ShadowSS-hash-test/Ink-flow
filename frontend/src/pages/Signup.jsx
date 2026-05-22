@@ -1,37 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-
+import { Link, Navigate } from 'react-router-dom';
 import { Mail, Lock, User } from 'lucide-react'; 
 import { Navbar } from '../components/Navbar'; 
+import { useUserStore } from '../stores/useUserStore';
 
 export const Signup = () => {
+  const { loading, signup,user } = useUserStore();
+  
+ 
+  // Added isLoaded state for your fade-in animation
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Changed 'name' to 'username' to match your backend controller
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  // Trigger the mount animation
   useEffect(() => {
-    // Trigger the animation shortly after the component mounts
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100); // 100ms delay to ensure transition applies
-    return () => clearTimeout(timer);
+    setIsLoaded(true);
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Handle signup logic here
-    console.log("Signup attempt");
+    signup(formData);
   };
 
   return (
-    // Set up the main container
-    // This div will establish the stacking context
     <div className="flex flex-col min-h-screen relative bg-gray-900">
       
-      {/* === This is the Blurred Image Background === */}
+      {/* === Blurred Image Background === */}
       <div 
         aria-hidden="true" 
         className="
           absolute inset-0 z-0 
-          bg-[url(https://img.freepik.com/premium-photo/paints-brushes-painting_200402-2917.jpg)] {/* Using local image path */}
+          bg-[url(https://img.freepik.com/premium-photo/paints-brushes-painting_200402-2917.jpg)] 
           bg-cover bg-center 
           blur-lg
         "
@@ -89,6 +95,8 @@ export const Signup = () => {
                     type="text" 
                     id="username"
                     required
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     placeholder="your_username"
                     className="
                       w-full pl-10 pr-4 py-3 
@@ -122,6 +130,8 @@ export const Signup = () => {
                     type="email" 
                     id="email"
                     required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="you@example.com"
                     className="
                       w-full pl-10 pr-4 py-3 
@@ -155,6 +165,8 @@ export const Signup = () => {
                     type="password" 
                     id="password"
                     required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••"
                     className="
                       w-full pl-10 pr-4 py-3 
@@ -172,7 +184,7 @@ export const Signup = () => {
                 </div>
               </div>
 
-              {/* === Confirm Password Input === */}
+              {/* Confirm Password Input */}
               <div className="mb-6 relative">
                 <label 
                   htmlFor="confirm-password" 
@@ -188,6 +200,8 @@ export const Signup = () => {
                     type="password" 
                     id="confirm-password"
                     required
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     placeholder="••••••••"
                     className="
                       w-full pl-10 pr-4 py-3 
@@ -204,12 +218,11 @@ export const Signup = () => {
                   />
                 </div>
               </div>
-              {/* === End of New Field === */}
-
 
               {/* Submit Button */}
               <button 
                 type="submit"
+                disabled={loading}
                 className="
                   w-full 
                   py-3 
@@ -226,9 +239,10 @@ export const Signup = () => {
                   focus:ring-blue-400 
                   focus:ring-offset-2 
                   focus:ring-offset-gray-900
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 "
               >
-                Sign Up
+                {loading ? 'Signing Up...' : 'Sign Up'}
               </button>
 
               {/* Log in Link */}

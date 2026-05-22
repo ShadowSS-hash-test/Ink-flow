@@ -82,7 +82,11 @@ export const signup = async(req,res)=>{
 
           return res.status(200).json({
             success:true,
-            data:newUser.rows[0]
+            data: {
+                id: newUser.rows[0].id,
+                username: newUser.rows[0].username,
+                email: newUser.rows[0].email
+            }
           })
 
   
@@ -148,7 +152,12 @@ export const signin = async(req,res)=>{
 
       return res.status(200).json({
           success:true,
-          message:"Logged in successfully"
+          message:"Logged in successfully",
+          data: {
+                id: result.rows[0].id,
+                username: result.rows[0].username,
+                email: result.rows[0].email
+            }
 
       })
 
@@ -235,3 +244,20 @@ export const logout = async(req,res)=>{
         }
         
 }
+
+export const getProfile = async (req, res) => {
+    try {
+     
+        return res.status(200).json({
+            success: true,
+            data: req.user 
+        });
+
+    } catch (error) {
+        console.log("Error in getProfile controller: ", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
