@@ -62,20 +62,19 @@ const Sidebar = ({ activeTab, setActiveTab, user, onLogout }) => {
 
       {/* User Profile Footer */}
       <div className="user-profile border-t border-gray-800 pt-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img
-            src={user.avatar}
-            alt="Profile"
-            className="w-10 h-10 rounded-full border-2 border-gray-800"
-          />
-          <div>
-            <p className="font-semibold text-white leading-tight">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.plan}</p>
-          </div>
+        {/* Removed the image, just keeping the text stacked cleanly */}
+        <div className="flex flex-col truncate pr-2">
+          <p className="font-semibold text-white leading-tight truncate">
+            {user.username || user.name || "User"}
+          </p>
+          <p className="text-xs text-gray-500 truncate">
+            {user.email || "Free Plan"}
+          </p>
         </div>
+        
         <button
           onClick={onLogout}
-          className="text-gray-500 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
+          className="text-gray-500 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg flex-shrink-0"
           title="Log out"
         >
           <LogOut size={20} />

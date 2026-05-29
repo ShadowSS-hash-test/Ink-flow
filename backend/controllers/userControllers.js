@@ -3,7 +3,6 @@ import bcrypt from "bcrypt"
 
 export const updateProfile = async (req, res) => {
     try {
-       
         if (!req.user || !req.user.id) {
             return res.status(401).json({
                 success: false,
@@ -12,18 +11,39 @@ export const updateProfile = async (req, res) => {
         }
 
         const { id } = req.user;
-        const { displayName, emailAddress } = req.body;
+        const { displayName, emailAddress, password } = req.body; // Added password
 
-      
-        const query = `UPDATE users SET username = $1, email = $2 WHERE id=$3 RETURNING username,email`;
-        const result = await sql.query(query, [displayName, emailAddress, id]);
+        // 1. Check if password is provided
+        if (!password) {
+             return res.status(400).json({
+                 success: false,
+                 message: "Password is required to update your profile"
+             });
+        }
 
-        if (result.rowCount === 0) {
+        // 2. Fetch the user's current hashed password
+        const authQuery = `SELECT password FROM users WHERE id=$1`;
+        const authResult = await sql.query(authQuery, [id]);
+
+        if (authResult.rowCount === 0) {
             return res.status(404).json({
                 success: false,
-                message: "The person with this userID does not exist"
+                message: "A user with this ID doesn't exist"
             });
         }
+
+        // 3. Verify the provided password
+        const isPasswordValid = await bcrypt.compare(password, authResult.rows[0].password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid password. Profile update denied."
+            });
+        }
+
+        // 4. Proceed with updating the profile
+        const query = `UPDATE users SET username = $1, email = $2 WHERE id=$3 RETURNING username,email`;
+        const result = await sql.query(query, [displayName, emailAddress, id]);
 
         return res.status(200).json({
             success: true,
@@ -31,10 +51,8 @@ export const updateProfile = async (req, res) => {
         });
 
     } catch (error) {
-        
         if (error.code === '23505') {
             const field = error.detail.includes('email') ? 'email address' : 'username';
-            
             return res.status(409).json({
                 success: false,
                 message: `A user with this ${field} already exists`

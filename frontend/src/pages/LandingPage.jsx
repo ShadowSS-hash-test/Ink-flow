@@ -120,7 +120,7 @@ const LandingPage = () => {
               <div className="mt-12 flex flex-col sm:flex-row gap-6">
 
                 <Link
-                  to="/drawOffline"
+                  to="/profile"
                   className={`
                     group flex-1 
                     bg-blue-600 text-white 
@@ -145,7 +145,7 @@ const LandingPage = () => {
                   </span>
                 </Link>
                 <Link
-                  to="/draw"
+                  to="/profile"
                   className={`
                     group flex-1 
                     bg-gray-800 text-white 

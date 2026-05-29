@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Pencil, Eraser, Trash2, Download } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Save } from 'lucide-react';
+import { useDrawingStore } from '../stores/useDrawingStore'; 
 
 function Toolbutton({ label, icon, isActive = false, className = '', ...props }) {
   return (
@@ -7,7 +8,7 @@ function Toolbutton({ label, icon, isActive = false, className = '', ...props })
       aria-label={label}
       title={label}
       className={`
-        p-3 rounded-lg flex items-center justify-center transition-all
+        p-3 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed
         ${isActive 
           ? 'bg-blue-600 text-white shadow-md' 
           : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'}
@@ -24,35 +25,85 @@ export const OfflineWhiteboard = () => {
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   
+  // --- ZUSTAND STORE ---
+  const { currentBoard, updateBoard, loading } = useDrawingStore();
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState('pen');
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(5);
   
+  // --- THE EVENT LOG ---
+  const eventLogRef = useRef([]); 
+  const currentActionRef = useRef(null); 
   const lastPositionRef = useRef({ x: 0, y: 0 });
 
-  // Helper to save canvas to LocalStorage
-  const saveToLocalStorage = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      localStorage.setItem('offline-whiteboard-data', canvas.toDataURL());
-    }
-  }, []);
-
-  // Helper to load from LocalStorage
-  const loadFromLocalStorage = useCallback(() => {
+  // --- REPLAY ENGINE ---
+  const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const context = contextRef.current;
-    const savedData = localStorage.getItem('offline-whiteboard-data');
-    
-    if (savedData && context) {
-      const img = new Image();
-      img.src = savedData;
-      img.onload = () => {
-        context.drawImage(img, 0, 0);
-      };
-    }
+    if (!canvas || !context) return;
+
+    // 1. Start with a blank canvas
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Fast-forward through history!
+    eventLogRef.current.forEach(action => {
+      if (action.type === 'clear') {
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      } 
+      else if (action.type === 'draw' && action.points.length > 0) {
+        context.beginPath();
+        context.strokeStyle = action.tool === 'eraser' ? '#FFFFFF' : action.color;
+        context.lineWidth = action.tool === 'eraser' ? action.lineWidth * 2 : action.lineWidth;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+
+        context.moveTo(action.points[0].x, action.points[0].y);
+        for (let i = 1; i < action.points.length; i++) {
+          context.lineTo(action.points[i].x, action.points[i].y);
+        }
+        context.stroke();
+      }
+    });
   }, []);
+
+  // --- SAVING LOGIC ---
+  const handleSaveToServer = async () => {
+    if (currentBoard) {
+      await updateBoard({ 
+        boardId: currentBoard.id, 
+        elements: eventLogRef.current 
+      });
+    }
+  };
+
+  // --- LOADING LOGIC ---
+  const loadInitialData = useCallback(() => {
+    try {
+      // Pull directly from the database store
+      let savedData = currentBoard?.elements;
+      
+      // Safety check in case the stringification on the backend returns a string to the frontend
+      if (typeof savedData === 'string') {
+        savedData = JSON.parse(savedData);
+      }
+
+      if (savedData && Array.isArray(savedData)) {
+        eventLogRef.current = savedData; 
+      } else {
+        eventLogRef.current = []; // Ensure it's empty if no data exists
+      }
+      
+      redrawCanvas(); 
+    } catch (error) {
+      console.error("Failed to load whiteboard data", error);
+      eventLogRef.current = [];
+      redrawCanvas();
+    }
+  }, [currentBoard, redrawCanvas]);
 
   const drawSegment = useCallback((x0, y0, x1, y1, style) => {
     const context = contextRef.current;
@@ -61,27 +112,20 @@ export const OfflineWhiteboard = () => {
     context.beginPath();
     context.moveTo(x0, y0);
     context.lineTo(x1, y1);
-    
     context.strokeStyle = style.color;
     context.lineWidth = style.lineWidth;
     context.lineCap = 'round';
     context.lineJoin = 'round';
-    
     context.stroke();
     context.closePath();
   }, []); 
 
-  const clearLocalCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    const context = contextRef.current;
-    if (canvas && context) {
-      context.fillStyle = '#FFFFFF';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      localStorage.removeItem('offline-whiteboard-data');
-    }
-  }, []); 
+  const clearCanvas = useCallback(() => {
+    eventLogRef.current = []; // Empty the array to save DB space
+    redrawCanvas();
+  }, [redrawCanvas]); 
 
-  // Initialize Canvas Context and Resize Logic
+  // Initialize Canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -91,36 +135,21 @@ export const OfflineWhiteboard = () => {
     const setCanvasSize = () => {
       const parent = canvas.parentElement;
       if (parent) {
-        // Keep existing drawing when resizing
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        tempCtx.drawImage(canvas, 0, 0);
-
         canvas.width = parent.clientWidth;
         canvas.height = parent.clientHeight;
-        
-        // Re-fill white and redraw
-        context.fillStyle = '#FFFFFF';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(tempCanvas, 0, 0);
-        
-        context.lineCap = 'round';
-        context.lineJoin = 'round';
+        redrawCanvas();
       }
     };
     
     setCanvasSize();
-    loadFromLocalStorage(); // Load work from previous session
+    loadInitialData();
 
     window.addEventListener('resize', setCanvasSize);
     return () => window.removeEventListener('resize', setCanvasSize);
-  }, [loadFromLocalStorage]); 
+  }, [loadInitialData, redrawCanvas]); 
 
   const getPosition = (event) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     let x, y;
     if (event.touches && event.touches.length > 0) {
@@ -137,15 +166,17 @@ export const OfflineWhiteboard = () => {
     if (event.touches) event.preventDefault();
     const pos = getPosition(event);
     if (!pos) return;
+    
     setIsDrawing(true);
     lastPositionRef.current = pos;
-  };
 
-  const finishDrawing = () => {
-    if (isDrawing) {
-      saveToLocalStorage(); // Save every time a stroke is finished
-    }
-    setIsDrawing(false);
+    currentActionRef.current = {
+      type: 'draw',
+      tool,
+      color,
+      lineWidth,
+      points: [pos]
+    };
   };
 
   const drawing = (event) => {
@@ -156,6 +187,10 @@ export const OfflineWhiteboard = () => {
     const lastPos = lastPositionRef.current;
     if (!newPos || !lastPos) return;
 
+    if (currentActionRef.current) {
+      currentActionRef.current.points.push(newPos);
+    }
+
     const style = {
       color: tool === 'eraser' ? '#FFFFFF' : color,
       lineWidth: tool === 'eraser' ? lineWidth * 2 : lineWidth
@@ -165,20 +200,28 @@ export const OfflineWhiteboard = () => {
     lastPositionRef.current = newPos;
   };
 
+  const finishDrawing = () => {
+    if (isDrawing && currentActionRef.current) {
+      eventLogRef.current.push(currentActionRef.current);
+      currentActionRef.current = null; 
+    }
+    setIsDrawing(false);
+  };
+
   const downloadImage = () => {
     const canvas = canvasRef.current;
     const link = document.createElement('a');
     link.download = `whiteboard-export-${Date.now()}.png`;
-    link.href = canvas.toDataURL();
+    link.href = canvas.toDataURL(); 
     link.click();
   };
 
   return (
     <div className="w-screen h-screen flex flex-col items-center p-4 gap-4 bg-gray-100 relative">
       
-      {/* Offline Badge */}
-      <div className="absolute top-4 right-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 z-20">
-        OFFLINE MODE
+      {/* Dynamic Status Badge */}
+      <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold border z-20 ${currentBoard ? 'bg-green-100 text-green-800 border-green-200' : 'bg-orange-100 text-orange-800 border-orange-200'}`}>
+        {currentBoard ? `CLOUD SYNC: ${currentBoard.title}` : 'OFFLINE MODE'}
       </div>
 
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-3 flex flex-wrap justify-center items-center gap-4 z-10">
@@ -227,6 +270,13 @@ export const OfflineWhiteboard = () => {
         
         <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
           <Toolbutton
+            label={loading ? "Saving..." : "Save to Cloud"}
+            icon={<Save size={20} />}
+            onClick={handleSaveToServer}
+            disabled={loading || !currentBoard}
+            className="text-green-600 hover:bg-green-50"
+          />
+          <Toolbutton
             label="Download PNG"
             icon={<Download size={20} />}
             onClick={downloadImage}
@@ -235,7 +285,7 @@ export const OfflineWhiteboard = () => {
           <Toolbutton
             label="Clear All"
             icon={<Trash2 size={20} />}
-            onClick={clearLocalCanvas}
+            onClick={clearCanvas}
             className="text-red-600 hover:bg-red-100"
           />
         </div>

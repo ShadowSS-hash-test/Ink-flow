@@ -57,9 +57,53 @@ export const createBoard = async (req, res) => {
     }
 };
 
-export const updateBoard = async(req,res)=>{
+export const updateBoard = async (req, res) => {
+    try {
+        const { boardId, elements } = req.body;
 
-}
+        // 1. Validate Input
+        if (!boardId || !elements) {
+            return res.status(400).json({
+                success: false,
+                message: "Board ID and drawing elements are required"
+            });
+        }
+
+        // Safe to extract because verifyToken middleware passed
+        const userId = req.user.id; 
+
+        // 2. Update the database (checking user_id = $3 for ownership security)
+        const query = `
+            UPDATE drawings 
+            SET elements = $1, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $2 AND user_id = $3 
+            RETURNING id, title, elements, created_at, updated_at
+        `;
+        
+       const result = await sql.query(query, [JSON.stringify(elements), boardId, userId]);
+
+        // 3. Check if the board was actually found and updated
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Board not found or you don't have permission to edit it"
+            });
+        }
+
+        // 4. Return success
+        return res.status(200).json({
+            success: true,
+            data: result.rows[0]
+        });
+
+    } catch (error) {
+        console.log("Error in updateBoard controller: ", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
 
 export const fetchBoards = async(req,res)=>{
  
