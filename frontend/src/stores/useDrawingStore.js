@@ -32,7 +32,7 @@ export const useDrawingStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get("/drawings/fetchBoards");
             set({ boards: res.data.data, loading: false });
-           
+            
         } catch (error) {
             set({ loading: false });
             toast.error(error.response?.data?.message || "Failed to fetch boards");
@@ -51,6 +51,22 @@ export const useDrawingStore = create((set, get) => ({
              toast.success("Board saved successfully")
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to save drawing");
+        }
+    },
+
+    deleteBoard: async (boardId) => {
+        try {
+            
+            await axiosInstance.delete(`/drawings/${boardId}`);
+            
+            // Remove the deleted board from the local state
+            set((state) => ({
+                boards: state.boards.filter((board) => board.id !== boardId)
+            }));
+
+            toast.success("Board deleted successfully");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete board");
         }
     },
 

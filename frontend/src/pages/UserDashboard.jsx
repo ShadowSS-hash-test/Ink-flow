@@ -109,24 +109,8 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                <div className={`p-6 rounded-3xl shadow-sm hover:shadow-md bg-white/60 text-gray-800 backdrop-blur-md border border-white/40 cursor-pointer transform-gpu transition-all ease-out duration-500 delay-300 ${isLoaded ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl"><LayoutDashboard size={24} /></div>
-                    <span className="text-xs font-medium text-gray-500 bg-white/50 px-2 py-1 rounded-full">2h ago</span>
-                  </div>
-                  <h4 className="text-xl font-bold mb-1">Marketing Brainstorm</h4>
-                  <p className="text-sm text-gray-600">4 collaborators</p>
-                </div>
-                
-                <div className={`p-6 rounded-3xl shadow-sm hover:shadow-md bg-white/60 text-gray-800 backdrop-blur-md border border-white/40 cursor-pointer transform-gpu transition-all ease-out duration-500 delay-400 ${isLoaded ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-green-100 text-green-600 rounded-2xl"><LayoutDashboard size={24} /></div>
-                    <span className="text-xs font-medium text-gray-500 bg-white/50 px-2 py-1 rounded-full">1d ago</span>
-                  </div>
-                  <h4 className="text-xl font-bold mb-1">Website Wireframe</h4>
-                  <p className="text-sm text-gray-600">Private board</p>
-                </div>
-
+          
+         
               </div>
             </>
           )}

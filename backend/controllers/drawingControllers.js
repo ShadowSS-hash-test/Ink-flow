@@ -147,3 +147,46 @@ export const fetchBoards = async(req,res)=>{
       
 
 }
+
+export const deleteBoard = async (req, res) => {
+    try {
+        const { boardId } = req.params; 
+        const userId = req.user.id; // Guaranteed to exist by your auth middleware
+
+        if (!boardId) {
+            return res.status(400).json({
+                success: false,
+                message: "Board ID is required"
+            });
+        }
+
+        // Delete the board only if it belongs to the logged-in user
+        const query = `
+            DELETE FROM drawings 
+            WHERE id = $1 AND user_id = $2 
+            RETURNING id, title
+        `;
+        
+        const result = await sql.query(query, [boardId, userId]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Board not found or you don't have permission to delete it"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Board deleted successfully",
+            data: result.rows[0] 
+        });
+
+    } catch (error) {
+        console.log("Error in deleteBoard controller: ", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};

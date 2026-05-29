@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDrawingStore } from '../stores/useDrawingStore';
-import { LayoutDashboard, Clock, FilePenLine, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, Clock, FilePenLine, ArrowRight, Trash2 } from 'lucide-react'; // <-- Added Trash2
 
 const MyBoards = () => {
   const navigate = useNavigate();
   
-  // Pull what we need from your Zustand store
-  const { boards, fetchBoards, loading, setCurrentBoard } = useDrawingStore();
+  // Pull what we need from your Zustand store, including the new deleteBoard function
+  const { boards, fetchBoards, loading, setCurrentBoard, deleteBoard } = useDrawingStore();
 
   // Fetch boards when the component loads
   useEffect(() => {
@@ -18,14 +18,21 @@ const MyBoards = () => {
   const handleOpenBoard = (board) => {
     setCurrentBoard(board);
     // Navigating to the "offline" route since they are opening it alone first.
-    // They can invite people later if you build a sharing feature!
     navigate('/drawOffline'); 
   };
 
+  // Handle deleting a board
+  const handleDeleteBoard = async (e, boardId) => {
+    e.stopPropagation(); // Prevents the card's onClick (handleOpenBoard) from firing
+    
+    // Simple confirmation dialog before deleting
+    if (window.confirm("Are you sure you want to delete this board? This action cannot be undone.")) {
+      await deleteBoard(boardId);
+    }
+  };
 
-// Helper to format the PostgreSQL timestamp cleanly
   // Helper to format the PostgreSQL timestamp cleanly
-const formatDate = (dateString) => {
+  const formatDate = (dateString) => {
     if (!dateString) return '';
     
     // Create a Date object from the mangled string Express sent
@@ -78,25 +85,37 @@ const formatDate = (dateString) => {
           <div 
             key={board.id}
             onClick={() => handleOpenBoard(board)}
-            className="p-6 rounded-3xl shadow-sm hover:shadow-xl bg-white/70 text-gray-800 backdrop-blur-xl border border-white/50 cursor-pointer transform-gpu transition-all ease-out duration-300 hover:-translate-y-1 hover:bg-white/90 group"
+            className="p-6 rounded-3xl shadow-sm hover:shadow-xl bg-white/70 text-gray-800 backdrop-blur-xl border border-white/50 cursor-pointer transform-gpu transition-all ease-out duration-300 hover:-translate-y-1 hover:bg-white/90 group flex flex-col justify-between"
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <div className="flex justify-between items-start mb-6">
-              <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                <LayoutDashboard size={24} />
+            <div>
+              <div className="flex justify-between items-start mb-6">
+                <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <LayoutDashboard size={24} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/60 px-3 py-1.5 rounded-full shadow-sm">
+                  <Clock size={12} />
+                  <span>{formatDate(board.updated_at)}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/60 px-3 py-1.5 rounded-full shadow-sm">
-                <Clock size={12} />
-                <span>{formatDate(board.updated_at)}</span>
-              </div>
+              
+              <h4 className="text-xl font-bold mb-2 truncate" title={board.title}>
+                {board.title}
+              </h4>
             </div>
-            
-            <h4 className="text-xl font-bold mb-2 truncate" title={board.title}>
-              {board.title}
-            </h4>
             
             <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200/50">
               
+              {/* Delete Button */}
+              <button
+                onClick={(e) => handleDeleteBoard(e, board.id)}
+                className="flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                title="Delete Board"
+              >
+                <Trash2 size={16} />
+                <span>Delete</span>
+              </button>
+
               <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600 transition-colors">
                 <ArrowRight size={16} />
               </div>

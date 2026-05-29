@@ -1,20 +1,44 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Pencil, Eraser, Trash2, Download, Save } from 'lucide-react';
-import { useDrawingStore } from '../stores/useDrawingStore'; 
+import { Pencil, Eraser, Trash2, Download, Save, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useDrawingStore } from '../stores/useDrawingStore';
 
-function Toolbutton({ label, icon, isActive = false, className = '', ...props }) {
+const COLORS = [
+  '#0f0f0f', '#ef4444', '#f97316', '#eab308',
+  '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899',
+  '#ffffff',
+];
+
+function ToolButton({ label, icon, isActive = false, onClick, danger = false, disabled = false }) {
   return (
     <button
       aria-label={label}
       title={label}
-      className={`
-        p-3 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed
-        ${isActive 
-          ? 'bg-blue-600 text-white shadow-md' 
-          : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'}
-        ${className}
-      `}
-      {...props}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'background 0.15s, transform 0.1s',
+        background: isActive ? '#3b82f6' : 'transparent',
+        color: isActive ? '#fff' : danger ? '#ef4444' : disabled ? '#9ca3af' : '#374151',
+        opacity: disabled ? 0.6 : 1,
+        flexShrink: 0,
+      }}
+      onMouseEnter={e => {
+        if (!isActive && !disabled) e.currentTarget.style.background = danger ? '#fef2f2' : '#f3f4f6';
+      }}
+      onMouseLeave={e => {
+        if (!isActive && !disabled) e.currentTarget.style.background = 'transparent';
+      }}
+      onMouseDown={e => { if (!disabled) e.currentTarget.style.transform = 'scale(0.92)'; }}
+      onMouseUp={e => { if (!disabled) e.currentTarget.style.transform = 'scale(1)'; }}
     >
       {icon}
     </button>
@@ -22,6 +46,7 @@ function Toolbutton({ label, icon, isActive = false, className = '', ...props })
 }
 
 export const OfflineWhiteboard = () => {
+  const navigate = useNavigate();
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   
@@ -30,8 +55,8 @@ export const OfflineWhiteboard = () => {
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState('pen');
-  const [color, setColor] = useState('#000000');
-  const [lineWidth, setLineWidth] = useState(5);
+  const [color, setColor] = useState('#0f0f0f');
+  const [lineWidth, setLineWidth] = useState(4);
   
   // --- THE EVENT LOG ---
   const eventLogRef = useRef([]); 
@@ -57,7 +82,7 @@ export const OfflineWhiteboard = () => {
       else if (action.type === 'draw' && action.points.length > 0) {
         context.beginPath();
         context.strokeStyle = action.tool === 'eraser' ? '#FFFFFF' : action.color;
-        context.lineWidth = action.tool === 'eraser' ? action.lineWidth * 2 : action.lineWidth;
+        context.lineWidth = action.tool === 'eraser' ? action.lineWidth * 3 : action.lineWidth;
         context.lineCap = 'round';
         context.lineJoin = 'round';
 
@@ -83,10 +108,8 @@ export const OfflineWhiteboard = () => {
   // --- LOADING LOGIC ---
   const loadInitialData = useCallback(() => {
     try {
-      // Pull directly from the database store
       let savedData = currentBoard?.elements;
       
-      // Safety check in case the stringification on the backend returns a string to the frontend
       if (typeof savedData === 'string') {
         savedData = JSON.parse(savedData);
       }
@@ -94,7 +117,7 @@ export const OfflineWhiteboard = () => {
       if (savedData && Array.isArray(savedData)) {
         eventLogRef.current = savedData; 
       } else {
-        eventLogRef.current = []; // Ensure it's empty if no data exists
+        eventLogRef.current = []; 
       }
       
       redrawCanvas(); 
@@ -193,7 +216,7 @@ export const OfflineWhiteboard = () => {
 
     const style = {
       color: tool === 'eraser' ? '#FFFFFF' : color,
-      lineWidth: tool === 'eraser' ? lineWidth * 2 : lineWidth
+      lineWidth: tool === 'eraser' ? lineWidth * 3 : lineWidth
     };
 
     drawSegment(lastPos.x, lastPos.y, newPos.x, newPos.y, style);
@@ -216,82 +239,51 @@ export const OfflineWhiteboard = () => {
     link.click();
   };
 
+  const sizeLabel = tool === 'eraser' ? `${lineWidth * 3}px` : `${lineWidth}px`;
+
   return (
-    <div className="w-screen h-screen flex flex-col items-center p-4 gap-4 bg-gray-100 relative">
+    <div style={{
+      width: '100vw',
+      height: '100vh',
+      background: '#f0f0f0',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      position: 'relative',
+    }}>
       
-      {/* Dynamic Status Badge */}
-      <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold border z-20 ${currentBoard ? 'bg-green-100 text-green-800 border-green-200' : 'bg-orange-100 text-orange-800 border-orange-200'}`}>
-        {currentBoard ? `CLOUD SYNC: ${currentBoard.title}` : 'OFFLINE MODE'}
+      {/* GO BACK BUTTON */}
+      <div style={{ position: 'absolute', top: 16, left: 20, zIndex: 20 }}>
+        <button
+          onClick={() => navigate(-1)}
+          onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
+          onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
+          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: '#ffffff',
+            border: 'none',
+            borderRadius: 12,
+            padding: '8px 14px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#374151',
+            transition: 'transform 0.1s, background 0.2s',
+          }}
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
       </div>
 
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-3 flex flex-wrap justify-center items-center gap-4 z-10">
-        
-        <div className="flex flex-col items-center">
-          <label htmlFor="color" className="text-xs font-medium text-gray-500 mb-1">Color</label>
-          <input
-            id="color"
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="w-10 h-10 rounded-full border border-gray-300 cursor-pointer p-0"
-            disabled={tool === 'eraser'}
-          />
-        </div>
-
-        <div className="flex flex-col items-center">
-          <label htmlFor="lineWidth" className="text-xs font-medium text-gray-500 mb-1">
-            Size ({lineWidth}px)
-          </label>
-          <input
-            id="lineWidth"
-            type="range"
-            min="1"
-            max="50"
-            value={lineWidth}
-            onChange={(e) => setLineWidth(Number(e.target.value))}
-            className="w-32 cursor-pointer"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-          <Toolbutton
-            label="Pen"
-            icon={<Pencil size={20} />}
-            isActive={tool === 'pen'}
-            onClick={() => setTool('pen')}
-          />
-          <Toolbutton
-            label="Eraser"
-            icon={<Eraser size={20} />}
-            isActive={tool === 'eraser'}
-            onClick={() => setTool('eraser')}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-          <Toolbutton
-            label={loading ? "Saving..." : "Save to Cloud"}
-            icon={<Save size={20} />}
-            onClick={handleSaveToServer}
-            disabled={loading || !currentBoard}
-            className="text-green-600 hover:bg-green-50"
-          />
-          <Toolbutton
-            label="Download PNG"
-            icon={<Download size={20} />}
-            onClick={downloadImage}
-            className="text-blue-600 hover:bg-blue-50"
-          />
-          <Toolbutton
-            label="Clear All"
-            icon={<Trash2 size={20} />}
-            onClick={clearCanvas}
-            className="text-red-600 hover:bg-red-100"
-          />
-        </div>
-      </div>
-
-      <div className="w-full max-w-6xl flex-1 bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+      {/* Canvas Wrapper */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
@@ -302,10 +294,156 @@ export const OfflineWhiteboard = () => {
           onTouchEnd={finishDrawing}
           onTouchCancel={finishDrawing}
           onTouchMove={drawing}
-          className="w-full h-full cursor-crosshair touch-none"
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            cursor: tool === 'eraser' ? 'cell' : 'crosshair',
+          }}
         >
           Your browser does not support the canvas element.
         </canvas>
+      </div>
+
+      {/* Floating toolbar — left-center */}
+      <div style={{
+        position: 'absolute',
+        left: 20,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 6,
+        background: '#ffffff',
+        borderRadius: 16,
+        padding: '12px 8px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
+        zIndex: 10,
+        minWidth: 56,
+      }}>
+
+        <ToolButton label="Pen" icon={<Pencil size={18} />} isActive={tool === 'pen'} onClick={() => setTool('pen')} />
+        <ToolButton label="Eraser" icon={<Eraser size={18} />} isActive={tool === 'eraser'} onClick={() => setTool('eraser')} />
+
+        <div style={{ width: 32, height: 1, background: '#e5e7eb', margin: '2px 0' }} />
+
+        {COLORS.map((c) => (
+          <button
+            key={c}
+            aria-label={`Color ${c}`}
+            title={c}
+            onClick={() => { setColor(c); if (tool === 'eraser') setTool('pen'); }}
+            style={{
+              width: c === color && tool !== 'eraser' ? 28 : 22,
+              height: c === color && tool !== 'eraser' ? 28 : 22,
+              borderRadius: '50%',
+              background: c,
+              border: c === color && tool !== 'eraser'
+                ? '2.5px solid #3b82f6'
+                : c === '#ffffff'
+                ? '1.5px solid #d1d5db'
+                : '1.5px solid transparent',
+              cursor: 'pointer',
+              transition: 'all 0.12s',
+              flexShrink: 0,
+            }}
+          />
+        ))}
+
+        <div style={{ width: 32, height: 1, background: '#e5e7eb', margin: '2px 0' }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500, letterSpacing: '0.03em' }}>{sizeLabel}</span>
+          <input
+            type="range"
+            min="1"
+            max="40"
+            value={lineWidth}
+            onChange={(e) => setLineWidth(Number(e.target.value))}
+            aria-label="Brush size"
+            style={{ writingMode: 'vertical-lr', direction: 'rtl', width: 28, height: 80, cursor: 'pointer', accentColor: '#3b82f6' }}
+          />
+        </div>
+
+        <div style={{ width: 32, height: 1, background: '#e5e7eb', margin: '2px 0' }} />
+
+        <ToolButton label="Clear canvas" icon={<Trash2 size={18} />} onClick={clearCanvas} danger />
+      </div>
+
+      {/* TOP RIGHT CLOUD ACTIONS */}
+      <div style={{
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 10,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: 12,
+      }}>
+        
+        {/* Action Panel */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: 14,
+          padding: '8px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+          display: 'flex',
+          gap: 6,
+        }}>
+          <button
+            onClick={downloadImage}
+            title="Download PNG"
+            onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'transparent',
+              borderRadius: 8,
+              cursor: 'pointer',
+              color: '#374151',
+              fontWeight: 500,
+              fontSize: 13,
+              gap: 6,
+              transition: 'background 0.2s'
+            }}
+          >
+            <Download size={16} color="#3b82f6" />
+            Export
+          </button>
+          
+          <button
+            onClick={handleSaveToServer}
+            disabled={loading || !currentBoard}
+            title="Save to Cloud"
+            onMouseEnter={e => { if (!loading && currentBoard) e.currentTarget.style.background = '#dcfce7' }}
+            onMouseLeave={e => { if (!loading && currentBoard) e.currentTarget.style.background = '#f0fdf4' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 12px',
+              border: 'none',
+              background: (!loading && currentBoard) ? '#f0fdf4' : '#f3f4f6',
+              borderRadius: 8,
+              cursor: (!loading && currentBoard) ? 'pointer' : 'not-allowed',
+              color: (!loading && currentBoard) ? '#166534' : '#9ca3af',
+              fontWeight: 500,
+              fontSize: 13,
+              gap: 6,
+              transition: 'background 0.2s'
+            }}
+          >
+            <Save size={16} color={(!loading && currentBoard) ? "#22c55e" : "#9ca3af"} />
+            {loading ? "Saving..." : "Save"}
+          </button>
+        </div>
+
       </div>
 
     </div>
