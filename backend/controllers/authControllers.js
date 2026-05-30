@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 
 dotenv.config()
-
+const isProduction = process.env.NODE_ENV === "production";
 
 export const signup = async(req,res)=>{
 
@@ -70,15 +70,15 @@ export const signup = async(req,res)=>{
 
           res.cookie("access_token", access_token, {
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "production",
-                 sameSite: 'none',
+               secure: isProduction, 
+             sameSite: isProduction ? 'none' : 'lax',
                 maxAge:15*60*1000
                })
 
          res.cookie("refresh_token",refresh_token,{
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "production",
-                 sameSite: 'none',
+               secure: isProduction, 
+              sameSite: isProduction ? 'none' : 'lax',
                 maxAge:7*24*60*60*1000 
                })
 
@@ -142,16 +142,18 @@ export const signin = async(req,res)=>{
 
           res.cookie("access_token", access_token, {
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "production",
+                 secure: isProduction, 
+              sameSite: isProduction ? 'none' : 'lax',
                 maxAge:15*60*1000, 
-                  sameSite: 'none',
+                  
                })
 
          res.cookie("refresh_token",refresh_token,{
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "production", 
+                 secure: isProduction, 
+                sameSite: isProduction ? 'none' : 'lax',
                 maxAge:7*24*60*60*1000,
-                  sameSite: 'none',
+                 
                })
 
       return res.status(200).json({
@@ -204,8 +206,8 @@ export const refreshToken = async(req,res)=>{
 
        res.cookie("access_token",access_token,{
         httpOnly:true,
-        secure:process.env.NODE_ENV === "production",
-        sameSite: 'none',
+        secure: isProduction, 
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge:15*60*1000 //15 mins
 
     })
@@ -232,8 +234,8 @@ export const logout = async(req,res)=>{
     try{
         const cookieOptions = {
             httpOnly: true, 
-            secure: process.env.NODE_ENV === "production", 
-            sameSite: 'none'
+            secure: isProduction, 
+            sameSite: isProduction ? 'none' : 'lax',
         };
 
         res.clearCookie("refresh_token", cookieOptions);

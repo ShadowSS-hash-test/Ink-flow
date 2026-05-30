@@ -24,9 +24,7 @@ export const useUserStore = create((set,get)=>({
             
         }
 
-      
-
-
+    
 
 
     },
@@ -71,22 +69,7 @@ export const useUserStore = create((set,get)=>({
            }
     },
 
-    
-
-    refreshToken: async () => {
-		
-		if (get().checkingAuth) return;
-
-		set({ checkingAuth: true });
-		try {
-			const response = await axiosInstance.post("/auth/refresh-token");
-			set({ checkingAuth: false });
-			return response.data;
-		} catch (error) {
-			set({ user: null, checkingAuth: false });
-			throw error;
-		}
-	},
+     
 
  updateProfile: async (displayName, emailAddress, password) => {
         set({ loading: true });

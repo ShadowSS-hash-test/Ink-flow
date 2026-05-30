@@ -9,6 +9,7 @@ router.post('/signup',signup)
 router.post('/signin',signin)
 router.get('/profile',verifyToken,getProfile)
 router.get('/logout',verifyToken,logout)
+router.post('/refresh-token',refreshToken)
 
 export default router;
 
