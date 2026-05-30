@@ -10,7 +10,7 @@ import drawingRoutes from "./routes/drawingRoutes.js"
 import cookieParser from "cookie-parser"
 
 app.use(cors({
-    origin: 'http://localhost:5173', 
+    origin: ['http://localhost:5173', "ink-flow-2bxacgzh1-snip-s-projects.vercel.app"], 
     credentials: true,               
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
