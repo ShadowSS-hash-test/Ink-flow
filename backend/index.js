@@ -9,8 +9,10 @@ import userRoutes from "./routes/userRoutes.js"
 import drawingRoutes from "./routes/drawingRoutes.js"
 import cookieParser from "cookie-parser"
 
+dotenv.config();
+
 app.use(cors({
-    origin: ['http://localhost:5173', "https://ink-flow-chi.vercel.app"], 
+    origin: ['http://localhost:5173', process.env.FRONTEND_URL], 
     credentials: true,               
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
@@ -26,7 +28,7 @@ app.use('/api/drawings',drawingRoutes)
 
 
 
-dotenv.config();
+
 const PORT = process.env.PORT || 5000;
  
 
