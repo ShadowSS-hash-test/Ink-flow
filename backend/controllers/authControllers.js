@@ -70,13 +70,15 @@ export const signup = async(req,res)=>{
 
           res.cookie("access_token", access_token, {
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "Production", 
+               secure: process.env.NODE_ENV === "production",
+                 sameSite: 'none',
                 maxAge:15*60*1000
                })
 
          res.cookie("refresh_token",refresh_token,{
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "Production",
+               secure: process.env.NODE_ENV === "production",
+                 sameSite: 'none',
                 maxAge:7*24*60*60*1000 
                })
 
@@ -140,14 +142,16 @@ export const signin = async(req,res)=>{
 
           res.cookie("access_token", access_token, {
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "Production",
+               secure: process.env.NODE_ENV === "production",
                 maxAge:15*60*1000, 
+                  sameSite: 'none',
                })
 
          res.cookie("refresh_token",refresh_token,{
                httpOnly: true, 
-               secure: process.env.NODE_ENV === "Production", 
-                maxAge:7*24*60*60*1000
+               secure: process.env.NODE_ENV === "production", 
+                maxAge:7*24*60*60*1000,
+                  sameSite: 'none',
                })
 
       return res.status(200).json({
@@ -184,7 +188,7 @@ export const refreshToken = async(req,res)=>{
 
       
              try {
-                 decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN_SECRET);
+                 decoded = jwt.verify(refreshTok, process.env.JWT_REFRESH_TOKEN_SECRET);
                      
             } catch (err) {
            
@@ -200,8 +204,8 @@ export const refreshToken = async(req,res)=>{
 
        res.cookie("access_token",access_token,{
         httpOnly:true,
-        secure:process.env.NODE_ENV === "Production",
-        sameSite:"strict",
+        secure:process.env.NODE_ENV === "production",
+        sameSite: 'none',
         maxAge:15*60*1000 //15 mins
 
     })
@@ -225,24 +229,27 @@ export const refreshToken = async(req,res)=>{
 
 
 export const logout = async(req,res)=>{
-        try{
-            
-      
-            res.clearCookie("refresh_token");
-            res.clearCookie("access_token")
-            res.json({message:"Logged out successfully"})
+    try{
+        const cookieOptions = {
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === "production", 
+            sameSite: 'none'
+        };
 
-        }catch(error)
-        {
-              console.log("Error in logout controller: " + error)
-            res.status(500).json({
-                success:false,
-                message:"failed to logout, internal server error.",
-                err:error.message
-            })
-
-        }
+        res.clearCookie("refresh_token", cookieOptions);
+        res.clearCookie("access_token", cookieOptions);
         
+        res.json({message:"Logged out successfully"})
+
+    }catch(error)
+    {
+        console.log("Error in logout controller: " + error)
+        res.status(500).json({
+            success:false,
+            message:"failed to logout, internal server error.",
+            err:error.message
+        })
+    }
 }
 
 export const getProfile = async (req, res) => {
