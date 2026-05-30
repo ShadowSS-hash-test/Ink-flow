@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 
 const nodeEnv = import.meta.env.VITE_NODE_ENV; 
-const backendUrl = import.meta.env.BACKEND_URL;
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const COLORS = [
   '#0f0f0f', '#ef4444', '#f97316', '#eab308',
