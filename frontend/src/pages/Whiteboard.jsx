@@ -4,10 +4,11 @@ import { io } from "socket.io-client";
 import { toast } from "react-hot-toast"
 import { useUserStore } from '../stores/useUserStore';
 import { useNavigate, useLocation } from 'react-router-dom';
-import dotenv from "dotenv"
 
 
-dotenv.config()
+
+const nodeEnv = import.meta.env.VITE_NODE_ENV; 
+const backendUrl = import.meta.env.BACKEND_URL;
 
 const COLORS = [
   '#0f0f0f', '#ef4444', '#f97316', '#eab308',
@@ -115,7 +116,7 @@ export const Whiteboard = () => {
 
   useEffect(() => {
     clearLocalCanvas();
-    const newSocket = io( process.env.NODE_ENV === "Development" ? "http://localhost:3000" : "https://ink-flow.onrender.com", { withCredentials: true });
+    const newSocket = io( nodeEnv === "Development" ? "http://localhost:3000" : backendUrl, { withCredentials: true });
     setSocket(newSocket);
     
     newSocket.emit("joinRoom", { roomID: activeRoomID, user: username });
