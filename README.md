@@ -3,6 +3,8 @@
 
 A real-time collaborative whiteboard app. Create a room, share the link, and draw together live — with synced strokes, live cursors, and persistent boards you can save and revisit later.
 
+🔗 **Live demo:** https://ink-flow-chi.vercel.app/
+
 ## Features
 
 - **Real-time collaborative drawing** — strokes sync instantly across all participants in a room via Socket.IO, capped at 3 concurrent users per room.
