@@ -19,8 +19,6 @@ function App() {
     checkAuth()
   }, [checkAuth])
 
-  // === ADD THIS BLOCK ===
-  // While we are checking the user's cookies on initial load, show a loader
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
