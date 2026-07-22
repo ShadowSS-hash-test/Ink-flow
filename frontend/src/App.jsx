@@ -22,7 +22,7 @@ function App() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        {/* You can replace this with a nice spinner component later! */}
+   
         <div className="text-white text-xl">Loading Inkflow...</div>
       </div>
     );
